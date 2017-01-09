@@ -1,0 +1,10 @@
+Uuid: eb563ada801346e6bdb7a7d7c5c52583
+ExtensionType: 2
+Name: Python Scripter
+ScreenVersion: 1.0
+SerialVersion: 1
+MinPlatformVersion: 0
+ProOnly: False
+Author: Marcin Wielgoszewski
+ShortDescription: Allows execution of a custom Python script on each HTTP request and response.
+EntryPoint: burpscript.py
