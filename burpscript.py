@@ -33,7 +33,10 @@ class BurpExtender(IBurpExtender, IExtensionStateListener, IHttpListener, ITab):
                     SimpleAttributeSet())
 
             self._script = script
-            self._code = compile(script, '<string>', 'exec')
+            try:
+                self._code = compile(script, '<string>', 'exec')
+            except Exception as e:
+                traceback.print_exc(file=self.callbacks.getStderr())
 
         callbacks.registerExtensionStateListener(self)
         callbacks.registerHttpListener(self)
