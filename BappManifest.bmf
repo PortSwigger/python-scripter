@@ -2,8 +2,8 @@ Uuid: eb563ada801346e6bdb7a7d7c5c52583
 ExtensionType: 2
 Name: Python Scripter
 RepoName: python-scripter
-ScreenVersion: 1.0
-SerialVersion: 1
+ScreenVersion: 1.1
+SerialVersion: 2
 MinPlatformVersion: 0
 ProOnly: False
 Author: Marcin Wielgoszewski
