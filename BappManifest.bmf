@@ -2,10 +2,10 @@ Uuid: eb563ada801346e6bdb7a7d7c5c52583
 ExtensionType: 2
 Name: Python Scripter
 RepoName: python-scripter
-ScreenVersion: 1.1
+ScreenVersion: 2.0
 SerialVersion: 2
 MinPlatformVersion: 0
 ProOnly: False
-Author: Marcin Wielgoszewski
-ShortDescription: Allows execution of a custom Python script on each HTTP request and response.
-EntryPoint: burpscript.py
+Author: Marcin Wielgoszewski, Mike Cromwell
+ShortDescription: Allows execution of custom Python scripts to be used with HTTP request and responses plus handling Macro Items.
+EntryPoint: python-scripter.py
