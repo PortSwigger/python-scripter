@@ -113,7 +113,7 @@ class ScriptCollection(ObservableCollection):
 
 class Script(JavaBean):
 
-    def __init__(self, extender, callbacks, helpers, title, enabled=True, content=DEFAULT_SCRIPT):
+    def __init__(self, extender, callbacks, helpers, title, enabled=False, content=DEFAULT_SCRIPT):
         super(Script, self).__init__()
         self.title = title
         self.enabled = enabled
