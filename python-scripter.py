@@ -5,7 +5,7 @@ from gui import GUI
 
 import traceback
 
-__NAME__ = 'Multi-py'
+__NAME__ = 'Python Scripter'
 
 
 IBurpExtenderCallbacks.TOOL_MACRO = 0
