@@ -1,7 +1,7 @@
-from javax.swing import JTabbedPane, JPanel, JButton, JLabel, SwingConstants, BorderFactory, JOptionPane, GroupLayout, JCheckBox, JSplitPane, JRadioButton, ButtonGroup, JFileChooser
+from javax.swing import JTabbedPane, JPanel, JButton, JLabel, SwingConstants, JOptionPane, GroupLayout, JCheckBox, JSplitPane, JRadioButton, ButtonGroup, JFileChooser
 from javax.swing.event import ChangeListener, DocumentListener
 from javax.swing.LayoutStyle.ComponentPlacement import RELATED, UNRELATED
-from java.awt import BorderLayout, Font, Component, Color
+from java.awt import BorderLayout, Font, Component
 from java.beans import PropertyChangeListener
 from org.python.core.util import StringUtil
 from burp import IExtensionStateListener
@@ -119,6 +119,7 @@ class ScriptEditingPanel(JPanel, DocumentListener):
         self.scriptEditor = callbacks.createTextEditor()
         self.scriptEditor.text = script.content
         self.scriptText = self.scriptEditor.component
+        self.loadButton = JButton('Load', actionPerformed=self.load)
         self.compileButton = JButton('Compile', actionPerformed=self.compile, enabled=False)
         
         editingLayout = GroupLayout(self, autoCreateGaps=True, autoCreateContainerGaps=True)
@@ -129,7 +130,10 @@ class ScriptEditingPanel(JPanel, DocumentListener):
                                             )
                                             .addGroup(editingLayout.createParallelGroup()
                                               .addComponent(self.scriptText)
-                                              .addComponent(self.compileButton)
+                                            )
+                                            .addGroup(editingLayout.createSequentialGroup()
+                                                .addComponent(self.loadButton)
+                                                .addComponent(self.compileButton)
                                             )
                                         )
 
@@ -138,8 +142,11 @@ class ScriptEditingPanel(JPanel, DocumentListener):
                                                 .addComponent(self.enabledCheckbox)
                                             )
                                             .addGroup(editingLayout.createSequentialGroup()
-                                                .addComponent(self.scriptText)
-                                                .addComponent(self.compileButton) 
+                                                .addComponent(self.scriptText) 
+                                            )
+                                            .addGroup(editingLayout.createParallelGroup()
+                                                .addComponent(self.loadButton)
+                                                .addComponent(self.compileButton)
                                             )
                                         )
         self.layout = editingLayout
@@ -148,6 +155,13 @@ class ScriptEditingPanel(JPanel, DocumentListener):
 
     def enabled_changed(self, event):
         self.script.enabled = self.enabledCheckbox.isSelected()
+
+    def load(self, event):
+        file_chooser = JFileChooser()
+        choice = file_chooser.showOpenDialog(None)
+        if choice == JFileChooser.APPROVE_OPTION:
+            with open(file_chooser.selectedFile.path, 'r') as input_file:
+                self.scriptEditor.text = ''.join(input_file.readlines())
 
     def compile(self, event):
         self.script.compile()
