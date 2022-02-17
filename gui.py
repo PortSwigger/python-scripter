@@ -1,9 +1,10 @@
-from javax.swing import JTabbedPane, JPanel, JButton, JLabel, SwingConstants, JOptionPane, GroupLayout, JCheckBox, JSplitPane
+from javax.swing import JTabbedPane, JPanel, JButton, JLabel, SwingConstants, JOptionPane, GroupLayout, JCheckBox, JSplitPane, JRadioButton, ButtonGroup, JFileChooser
 from javax.swing.event import ChangeListener, DocumentListener
 from javax.swing.LayoutStyle.ComponentPlacement import RELATED, UNRELATED
 from java.awt import BorderLayout, Font, Component
 from java.beans import PropertyChangeListener
 from org.python.core.util import StringUtil
+from burp import IExtensionStateListener
 from uicomponents import BurpUI, TabComponent, TabComponentEditableTabMixin, TabComponentCloseableMixin, TabComponentCloseListener, TabComponentTitleChangedListener
 from models import ObservableCollection, Script
 from utils import EditorFileAdapter
@@ -118,6 +119,7 @@ class ScriptEditingPanel(JPanel, DocumentListener):
         self.scriptEditor = callbacks.createTextEditor()
         self.scriptEditor.text = script.content
         self.scriptText = self.scriptEditor.component
+        self.loadButton = JButton('Load', actionPerformed=self.load)
         self.compileButton = JButton('Compile', actionPerformed=self.compile, enabled=False)
         
         editingLayout = GroupLayout(self, autoCreateGaps=True, autoCreateContainerGaps=True)
@@ -128,7 +130,10 @@ class ScriptEditingPanel(JPanel, DocumentListener):
                                             )
                                             .addGroup(editingLayout.createParallelGroup()
                                               .addComponent(self.scriptText)
-                                              .addComponent(self.compileButton)
+                                            )
+                                            .addGroup(editingLayout.createSequentialGroup()
+                                                .addComponent(self.loadButton)
+                                                .addComponent(self.compileButton)
                                             )
                                         )
 
@@ -137,8 +142,11 @@ class ScriptEditingPanel(JPanel, DocumentListener):
                                                 .addComponent(self.enabledCheckbox)
                                             )
                                             .addGroup(editingLayout.createSequentialGroup()
-                                                .addComponent(self.scriptText)
-                                                .addComponent(self.compileButton) 
+                                                .addComponent(self.scriptText) 
+                                            )
+                                            .addGroup(editingLayout.createParallelGroup()
+                                                .addComponent(self.loadButton)
+                                                .addComponent(self.compileButton)
                                             )
                                         )
         self.layout = editingLayout
@@ -147,6 +155,13 @@ class ScriptEditingPanel(JPanel, DocumentListener):
 
     def enabled_changed(self, event):
         self.script.enabled = self.enabledCheckbox.isSelected()
+
+    def load(self, event):
+        file_chooser = JFileChooser()
+        choice = file_chooser.showOpenDialog(None)
+        if choice == JFileChooser.APPROVE_OPTION:
+            with open(file_chooser.selectedFile.path, 'r') as input_file:
+                self.scriptEditor.text = ''.join(input_file.readlines())
 
     def compile(self, event):
         self.script.compile()
@@ -173,8 +188,8 @@ class ScriptEditingPanel(JPanel, DocumentListener):
             self.compileButton.enabled = self.script.requires_compile
 
 
-class ScriptOutputPanel(JPanel, PropertyChangeListener):
-    
+class ScriptOutputPanel(JPanel, PropertyChangeListener, IExtensionStateListener):
+            
     def __init__(self, callbacks, script):
         super(ScriptOutputPanel, self).__init__()
         self.callbacks = callbacks
@@ -189,6 +204,10 @@ class ScriptOutputPanel(JPanel, PropertyChangeListener):
         self.add(self.tabbedPane, BorderLayout.CENTER)
         self.script.stdout = EditorFileAdapter(self.outputEditor)
         self.script.stderr = EditorFileAdapter(self.errorEditor)
+        self.output_file = None
+        
+        # register to be notified when the extension is unloaded so if a output_file ref is in use it can be closed
+        callbacks.registerExtensionStateListener(self)
 
     def clear_stderr(self, event):
         self.errorEditor.text = ''
@@ -196,13 +215,43 @@ class ScriptOutputPanel(JPanel, PropertyChangeListener):
     def clear_stdout(self, event):
         self.outputEditor.text = ''
 
+    def save_file_output(self, event):
+        self.outputFileBrowseButton.enabled = True
+        if self.output_file:  # already have an output_file
+            self.script.stdout = self.output_file
+            return
+
+        if not self.set_output_file():
+            # didn't choose a file then revert to using UI
+            self.outputUIRadioButton.selected = True
+    
+    def view_ui_output(self, event):
+        self.outputFileBrowseButton.enabled = False
+        self.script.stdout = EditorFileAdapter(self.outputEditor)
+
+    def set_output_file(self, event=None):
+        file_chooser = JFileChooser()
+        choice = file_chooser.showSaveDialog(None)
+        if choice == JFileChooser.APPROVE_OPTION:
+            self.outputFileLabel.text = file_chooser.selectedFile.path
+            self.output_file = open(file_chooser.selectedFile.path, 'a')         
+            self.script.stdout = self.output_file
+            return True
+        
+        return False
+        
     def propertyChange(self, event):
         if event.propertyName == Script.Properties.IS_COMPILED:
              if event.newValue:
                 self.errorEditor.text = ''
         elif event.propertyName == Script.Properties.COMPILATION_ERROR:
             self.errorEditor.text = event.newValue
-            self.tabbedPane.selectedIndex = 1
+            self.tabbedPane.selectedIndex = 1          
+
+    def extensionUnloaded(self):
+        if self.output_file:  # if we have a file ref then close it
+            print('Closing output file reference')
+            self.output_file.close()
 
     def _create_output_panel(self):
         self.outputPanel = JPanel()
@@ -210,16 +259,38 @@ class ScriptOutputPanel(JPanel, PropertyChangeListener):
         self.outputEditor.editable = False
         self.outputText = self.outputEditor.component
         self.clearOutputButton = JButton('Clear', actionPerformed=self.clear_stdout)
+        self.outputButtonGroup = ButtonGroup()
+        self.outputFileRadioButton = JRadioButton('Save to File:', actionPerformed=self.save_file_output)
+        self.outputUIRadioButton = JRadioButton('Show in UI:', selected=True, actionPerformed=self.view_ui_output)
+        self.outputFileLabel = JLabel()
+        self.outputFileBrowseButton  = JButton('Browse...', enabled=False, actionPerformed=self.set_output_file)
+
+        self.outputButtonGroup.add(self.outputFileRadioButton)
+        self.outputButtonGroup.add(self.outputUIRadioButton)
 
         outputLayout = GroupLayout(self.outputPanel, autoCreateGaps=True, autoCreateContainerGaps=True)
         outputLayout.setHorizontalGroup(outputLayout.createParallelGroup()
+                                            .addGroup(
+                                                outputLayout.createSequentialGroup()
+                                                    .addComponent(self.outputFileRadioButton)
+                                                    .addComponent(self.outputFileLabel)
+                                                    .addComponent(self.outputFileBrowseButton)
+                                                )
+                                            .addComponent(self.outputUIRadioButton)
                                             .addComponent(self.outputText)
                                             .addComponent(self.clearOutputButton)  
                                         )
 
         outputLayout.setVerticalGroup(outputLayout.createSequentialGroup()
-                                            .addComponent(self.outputText)
-                                            .addComponent(self.clearOutputButton)   
+                                        .addGroup(
+                                            outputLayout.createParallelGroup()
+                                                .addComponent(self.outputFileRadioButton)
+                                                .addComponent(self.outputFileLabel)
+                                                .addComponent(self.outputFileBrowseButton)
+                                            )
+                                        .addComponent(self.outputUIRadioButton)
+                                        .addComponent(self.outputText)
+                                        .addComponent(self.clearOutputButton)   
                                         )
         self.outputPanel.layout = outputLayout
         
@@ -240,7 +311,6 @@ class ScriptOutputPanel(JPanel, PropertyChangeListener):
                                             .addComponent(self.clearErrorButton)   
                                         )
         self.errorPanel.layout = errorLayout
-
 
 class ScriptPanel(JPanel):
 
