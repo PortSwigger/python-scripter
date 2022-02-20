@@ -1,7 +1,7 @@
-from javax.swing import JTabbedPane, JPanel, JButton, JLabel, SwingConstants, JOptionPane, GroupLayout, JCheckBox, JSplitPane, JRadioButton, ButtonGroup, JFileChooser
+from javax.swing import JTabbedPane, JPanel, JButton, JLabel, JTextField, SwingConstants, JOptionPane, GroupLayout, JCheckBox, JSplitPane, JRadioButton, ButtonGroup, JFileChooser
 from javax.swing.event import ChangeListener, DocumentListener
 from javax.swing.LayoutStyle.ComponentPlacement import RELATED, UNRELATED
-from java.awt import BorderLayout, Font, Component
+from java.awt import BorderLayout, Font, Component, Color
 from java.beans import PropertyChangeListener
 from org.python.core.util import StringUtil
 from burp import IExtensionStateListener
@@ -233,7 +233,7 @@ class ScriptOutputPanel(JPanel, PropertyChangeListener, IExtensionStateListener)
         file_chooser = JFileChooser()
         choice = file_chooser.showSaveDialog(None)
         if choice == JFileChooser.APPROVE_OPTION:
-            self.outputFileLabel.text = file_chooser.selectedFile.path
+            self.outputFileTextField.text = file_chooser.selectedFile.path
             self.output_file = open(file_chooser.selectedFile.path, 'a')         
             self.script.stdout = self.output_file
             return True
@@ -250,7 +250,7 @@ class ScriptOutputPanel(JPanel, PropertyChangeListener, IExtensionStateListener)
 
     def extensionUnloaded(self):
         if self.output_file:  # if we have a file ref then close it
-            print('Closing output file reference')
+            print('Closing output file reference for script: \'{}\''.format(self.script.title))
             self.output_file.close()
 
     def _create_output_panel(self):
@@ -262,7 +262,7 @@ class ScriptOutputPanel(JPanel, PropertyChangeListener, IExtensionStateListener)
         self.outputButtonGroup = ButtonGroup()
         self.outputFileRadioButton = JRadioButton('Save to File:', actionPerformed=self.save_file_output)
         self.outputUIRadioButton = JRadioButton('Show in UI:', selected=True, actionPerformed=self.view_ui_output)
-        self.outputFileLabel = JLabel()
+        self.outputFileTextField = JTextField(50, enabled=False, disabledTextColor=Color.black)
         self.outputFileBrowseButton  = JButton('Browse...', enabled=False, actionPerformed=self.set_output_file)
 
         self.outputButtonGroup.add(self.outputFileRadioButton)
@@ -273,7 +273,7 @@ class ScriptOutputPanel(JPanel, PropertyChangeListener, IExtensionStateListener)
                                             .addGroup(
                                                 outputLayout.createSequentialGroup()
                                                     .addComponent(self.outputFileRadioButton)
-                                                    .addComponent(self.outputFileLabel)
+                                                    .addComponent(self.outputFileTextField, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                                     .addComponent(self.outputFileBrowseButton)
                                                 )
                                             .addComponent(self.outputUIRadioButton)
@@ -285,7 +285,7 @@ class ScriptOutputPanel(JPanel, PropertyChangeListener, IExtensionStateListener)
                                         .addGroup(
                                             outputLayout.createParallelGroup()
                                                 .addComponent(self.outputFileRadioButton)
-                                                .addComponent(self.outputFileLabel)
+                                                .addComponent(self.outputFileTextField, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                                 .addComponent(self.outputFileBrowseButton)
                                             )
                                         .addComponent(self.outputUIRadioButton)
