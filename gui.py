@@ -35,7 +35,9 @@ You have no Python scripts created.<br/> Please use the add tab (+) button to cr
         self.add_tab.border = None
         
         self.emptyTab = JPanel(BorderLayout())
-        self.emptyTab.add(JLabel(ScriptTabbedPane.EMPTY_SCRIPT_TEXT, SwingConstants.CENTER), BorderLayout.CENTER)
+        emptyScriptLabel = JLabel(ScriptTabbedPane.EMPTY_SCRIPT_TEXT, SwingConstants.CENTER)
+        emptyScriptLabel.putClientProperty("html.disable", None)
+        self.emptyTab.add(emptyScriptLabel, BorderLayout.CENTER)
 
         self.addTab(None, self.emptyTab)
         self.setTabComponentAt(0, self.add_tab)
