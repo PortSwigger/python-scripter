@@ -127,6 +127,7 @@ class Script(JavaBean):
         self._compiled_content = content
         self._compilation_error = ''
         self._is_compiled = False
+        self._statics = {}
 
     def to_dict(self):
         fields = ['title', 'enabled', 'content']
@@ -152,7 +153,8 @@ class Script(JavaBean):
                         'toolFlag': toolFlag,
                         'messageIsRequest': messageIsRequest,
                         'messageInfo': messageInfo,
-                        'macroItems': macroItems
+                        'macroItems': macroItems,
+                        'statics': self._statics
                         }
 
             oldstderr = sys.stderr
