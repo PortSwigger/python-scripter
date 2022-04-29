@@ -5,7 +5,7 @@ from java.beans import PropertyChangeSupport, PropertyChangeEvent
 import sys
 import traceback
 
-DEFAULT_SCRIPT = '''# Recommended to use the pyscripterer base script found here https://github.com/lanmaster53/pyscripter-er
+DEFAULT_SCRIPT = '''# Recommended to use the pyscripter-er base script found here https://github.com/lanmaster53/pyscripter-er
 # to be placed into the python environment directory
 
 # from pyscripterer import BaseScript as Script
@@ -123,6 +123,7 @@ class Script(JavaBean):
         self.content = content
         self.stderr = sys.stderr
         self.stdout = sys.stdout
+        self.state = dict()
         self._code = None
         self._compiled_content = content
         self._compilation_error = ''
@@ -152,8 +153,9 @@ class Script(JavaBean):
                         'toolFlag': toolFlag,
                         'messageIsRequest': messageIsRequest,
                         'messageInfo': messageInfo,
-                        'macroItems': macroItems
-                        }
+                        'macroItems': macroItems,
+                        'state': self.state
+                    }
 
             oldstderr = sys.stderr
             oldstdout = sys.stdout
